@@ -2,7 +2,10 @@ package com.example.jase.prototype;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -18,19 +21,38 @@ import java.util.Set;
 
 public class connect extends AppCompatActivity {
 
-    Button connect = findViewById(R.id.connect);
-    ListView list = findViewById(R.id.deviceList);
+    Button connect;
+    ListView list;
 
     BluetoothAdapter myBluetooth = null;
     Set<BluetoothDevice> pairedDevices;
+
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                // Discovery has found a device. Get the BluetoothDevice
+                // object and its info from the Intent.
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String deviceName = device.getName();
+                String deviceHardwareAddress = device.getAddress(); // MAC address
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connect);
+        Toast.makeText(getApplicationContext(), "Starting", Toast.LENGTH_SHORT).show();
+
+        connect = findViewById(R.id.connect);
+        list = findViewById(R.id.deviceList);
 
         myBluetooth = BluetoothAdapter.getDefaultAdapter();
 
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mReceiver, filter);
         if(myBluetooth == null){
             Toast.makeText(getApplicationContext(), "No Bluetooth Adapter", Toast.LENGTH_SHORT).show();
             finish();
@@ -59,6 +81,7 @@ public class connect extends AppCompatActivity {
             startActivity(intent);
         }
     };
+
     public void pairedDevicesList(){
         pairedDevices = myBluetooth.getBondedDevices();
         ArrayList l = new ArrayList();

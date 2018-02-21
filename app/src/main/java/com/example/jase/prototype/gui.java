@@ -25,6 +25,8 @@ public class gui extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gui);
+
+        new ConnectBT().execute();
     }
 
     private void msg(String s){
