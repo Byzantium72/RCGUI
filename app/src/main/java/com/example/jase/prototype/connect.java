@@ -28,32 +28,15 @@ public class connect extends AppCompatActivity {
     Set<BluetoothDevice> pairedDevices;
     public static String EXTRA_ADDRESS;
 
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                // Discovery has found a device. Get the BluetoothDevice
-                // object and its info from the Intent.
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress(); // MAC address
-            }
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connect);
-        Toast.makeText(getApplicationContext(), "Starting", Toast.LENGTH_SHORT).show();
-
         connect = findViewById(R.id.connect);
         list = findViewById(R.id.deviceList);
 
         myBluetooth = BluetoothAdapter.getDefaultAdapter();
 
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(mReceiver, filter);
         if(myBluetooth == null){
             Toast.makeText(getApplicationContext(), "No Bluetooth Adapter", Toast.LENGTH_SHORT).show();
             finish();
