@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,10 +17,11 @@ import java.util.UUID;
 public class gui extends AppCompatActivity {
 
     String address = null;
+    private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
     BluetoothSocket btSocket = null;
     private boolean isBtConnected = false;
-    final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     SeekBar power;
     SeekBar steering;
@@ -29,9 +31,11 @@ public class gui extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gui);
 
+        Intent newint = getIntent();
+        address = newint.getStringExtra(connect.EXTRA_ADDRESS);
+
         power = findViewById(R.id.power);
         steering = findViewById(R.id.steering);
-
         new ConnectBT().execute();
 
         power.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -89,7 +93,7 @@ public class gui extends AppCompatActivity {
 
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
         private boolean ConnectSuccess = true;
-        private ProgressDialog progress;
+
 
         @Override
         protected void onPreExecute()
@@ -107,7 +111,6 @@ public class gui extends AppCompatActivity {
                     myBluetooth = BluetoothAdapter.getDefaultAdapter();//get the mobile bluetooth device
                     BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);//connects to the device's address and checks if it's available
                     btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(myUUID);
-                    BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
                     btSocket.connect();//start connection
                 }
             }
@@ -129,7 +132,7 @@ public class gui extends AppCompatActivity {
             }
             else
             {
-                msg("Connected to " + myBluetooth.getName());
+                msg("Connected to " + myBluetooth.getRemoteDevice(address).getName());
                 isBtConnected = true;
             }
             progress.dismiss();

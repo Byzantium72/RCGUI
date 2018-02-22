@@ -26,6 +26,7 @@ public class connect extends AppCompatActivity {
 
     BluetoothAdapter myBluetooth = null;
     Set<BluetoothDevice> pairedDevices;
+    public static String EXTRA_ADDRESS;
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -77,7 +78,7 @@ public class connect extends AppCompatActivity {
             String info = ((TextView) view).getText().toString();
             String address = info.substring(info.length() - 17);
             Intent intent = new Intent(connect.this, gui.class);
-            intent.putExtra("Extra Address", address);
+            intent.putExtra(EXTRA_ADDRESS, address);
             startActivity(intent);
         }
     };
