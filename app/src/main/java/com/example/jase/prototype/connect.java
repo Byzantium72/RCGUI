@@ -23,7 +23,6 @@ public class connect extends AppCompatActivity {
 
     Button connect;
     ListView list;
-
     BluetoothAdapter myBluetooth = null;
     Set<BluetoothDevice> pairedDevices;
     public static String EXTRA_ADDRESS;
@@ -37,6 +36,7 @@ public class connect extends AppCompatActivity {
 
         myBluetooth = BluetoothAdapter.getDefaultAdapter();
 
+        //if bluetooth is not turned on, request to turn it on
         if(myBluetooth == null){
             Toast.makeText(getApplicationContext(), "No Bluetooth Adapter", Toast.LENGTH_SHORT).show();
             finish();
@@ -47,6 +47,7 @@ public class connect extends AppCompatActivity {
             }
         }
 
+        //turns displays paired devices when "Connect" is pressed
         connect.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
@@ -55,6 +56,7 @@ public class connect extends AppCompatActivity {
         });
     }
 
+    //Begins connection based on what paired device is tapped
     private AdapterView.OnItemClickListener myListClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -66,6 +68,7 @@ public class connect extends AppCompatActivity {
         }
     };
 
+    //displays list of paired devices
     public void pairedDevicesList(){
         pairedDevices = myBluetooth.getBondedDevices();
         ArrayList l = new ArrayList();

@@ -10,8 +10,12 @@
         android:id="@+id/steering"
         android:layout_width="245dp"
         android:layout_height="25dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginStart="45dp"
         android:layout_marginTop="150dp"
+        android:progress="50"
+        app:layout_constraintEnd_toStartOf="@+id/power"
+        app:layout_constraintHorizontal_bias="0.221"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -23,4 +27,42 @@
         android:layout_marginTop="150dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Switch
+        android:id="@+id/fwd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="45dp"
+        android:layout_marginTop="30dp"
+        android:checked="true"
+        android:showText="true"
+        android:splitTrack="false"
+        android:text="R/F"
+        android:textOff="R"
+        android:textOn="F"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/txtSteering"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="8dp"
+        android:text="Steering"
+        app:layout_constraintBottom_toTopOf="@+id/steering"
+        app:layout_constraintEnd_toStartOf="@+id/txtPower"
+        app:layout_constraintHorizontal_bias="0.368"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/txtPower"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:layout_marginEnd="148dp"
+        android:text="Power"
+        app:layout_constraintBottom_toTopOf="@+id/power"
+        app:layout_constraintEnd_toEndOf="parent" />
 </android.support.constraint.ConstraintLayout>

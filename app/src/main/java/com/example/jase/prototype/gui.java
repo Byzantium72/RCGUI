@@ -12,7 +12,9 @@ import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import java.io.BufferedOutputStream;
@@ -31,11 +33,10 @@ public class gui extends AppCompatActivity {
     BluetoothSocket btSocket = null;
     private boolean isBtConnected = false;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    BufferedOutputStream bufOut;
-    //Queue<String> stream;
     SeekBar power;
     SeekBar steering;
     Stream streamThread;
+    Switch fwd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,28 +45,24 @@ public class gui extends AppCompatActivity {
 
         Intent newint = getIntent();
         address = newint.getStringExtra(connect.EXTRA_ADDRESS);
-        //stream = new LinkedList<>();
 
         power = findViewById(R.id.power);
         steering = findViewById(R.id.steering);
-        new ConnectBT().execute();
-        /*
-        try {
-            bufOut = new BufferedOutputStream(btSocket.getOutputStream());
-        }catch(IOException e){
+        fwd = findViewById(R.id.fwd);
 
-        }*/
+        //begin connection and start output thread
+        new ConnectBT().execute();
         streamThread = new Stream();
-        //streamThread.run();
+
+        //listens for changes in the power meter
         power.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 if(b){
-                    String send = "P-" + String.valueOf(i) + ":";
+                    String send;
+                    send = "P-" + String.valueOf(i) + ":";
                     Message next = Message.obtain(streamThread.handler, 1, send);
                     next.sendToTarget();
-                    //stream.add(send);
-                    //send();
                 }
             }
 
@@ -80,6 +77,7 @@ public class gui extends AppCompatActivity {
             }
         });
 
+        //listens for changes in the steering bar
         steering.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
@@ -87,8 +85,6 @@ public class gui extends AppCompatActivity {
                     String send = "S-" + String.valueOf(i) + ":";
                     Message next = Message.obtain(streamThread.handler, 1, send);
                     next.sendToTarget();
-                    //stream.add(send);
-                    //send();
                 }
             }
 
@@ -97,39 +93,41 @@ public class gui extends AppCompatActivity {
 
             }
 
+            //when user is done adjusting steering, reset bar to 50
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+                steering.setProgress(50);
+                Message send = Message.obtain(streamThread.handler, 1, "S-" + String.valueOf(steering.getProgress()));
+                send.sendToTarget();
+            }
+        });
 
+        //listen and update vehicle on forward and reverse status
+        fwd.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b){
+                    Message send = Message.obtain(streamThread.handler, 1, "F:");
+                    send.sendToTarget();
+                }else{
+                    Message send = Message.obtain(streamThread.handler, 1, "R:");
+                    send.sendToTarget();
+                }
             }
         });
     }
 
-    /*
-    public void createStream(){
-        try{
-            bufOut = new BufferedOutputStream(btSocket.getOutputStream());
-        }catch(IOException e){
-
-        }
-    }
-    public void send(){
-        try {
-            //bufOut.write(s.getBytes());
-            if(stream.peek().length() > 6){
-                btSocket.getOutputStream().write("Here is the problem".getBytes());
-            }
-            btSocket.getOutputStream().write(stream.remove().getBytes());
-        }catch (IOException e){
-
-        }
-    }*/
+    //easy method for displaying messages to user
     private void msg(String s){
         Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
     }
 
+    //this is a background thread that will constantly send data to the bluetooth module
+    //without interrupting normal device function
     private class Stream extends Thread{
-        Queue<String> stream = new LinkedList<>();
+        Queue<String> stream = new LinkedList<>();  //this queue holds all information to be sent
 
+        //handler required for thread to communicate with main UI thread
         @SuppressLint("HandlerLeak")
         Handler handler = new Handler(){
             @Override
@@ -140,12 +138,15 @@ public class gui extends AppCompatActivity {
                 }
                 stream.add(input.obj.toString());
 
+                //if wasn't any data being sent, restart the sending process
                 if(empty){
                     run();
                 }
             }
         };
 
+        //once initialized, this method will continue to send data to the bluetooth device until
+        //out of data to send
         public void run(){
             while(stream.size() > 0){
                 try {
@@ -156,6 +157,7 @@ public class gui extends AppCompatActivity {
         }
     }
 
+    //an asynchronous task that establishes connection to the bluetooth module
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
         private boolean ConnectSuccess = true;
 
@@ -174,8 +176,8 @@ public class gui extends AppCompatActivity {
                 if (btSocket == null || !isBtConnected)
                 {
                     myBluetooth = BluetoothAdapter.getDefaultAdapter();//get the mobile bluetooth device
-                    BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);//connects to the device's address and checks if it's available
-                    btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(myUUID);
+                    BluetoothDevice module = myBluetooth.getRemoteDevice(address);//connects to the device's address and checks if it's available
+                    btSocket = module.createInsecureRfcommSocketToServiceRecord(myUUID);
                     btSocket.connect();//start connection
                 }
             }
@@ -201,7 +203,6 @@ public class gui extends AppCompatActivity {
                 isBtConnected = true;
             }
             progress.dismiss();
-            //createStream();
         }
     }
 }
