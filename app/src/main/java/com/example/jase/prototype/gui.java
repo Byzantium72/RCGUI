@@ -60,7 +60,11 @@ public class gui extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 if(b){
                     String send;
-                    send = "P-" + String.valueOf(i) + ":";
+                    if(fwd.isChecked()) {
+                        send = "P-" + String.valueOf(i) + ":";
+                    }else{
+                        send = "p-" + String.valueOf(i) + ":";
+                    }
                     Message next = Message.obtain(streamThread.handler, 1, send);
                     next.sendToTarget();
                 }
@@ -107,10 +111,12 @@ public class gui extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if(b){
-                    Message send = Message.obtain(streamThread.handler, 1, "F:");
+                    power.setProgress(0);
+                    Message send = Message.obtain(streamThread.handler, 1, "F:P-0:");
                     send.sendToTarget();
                 }else{
-                    Message send = Message.obtain(streamThread.handler, 1, "R:");
+                    power.setProgress(0);
+                    Message send = Message.obtain(streamThread.handler, 1, "R:p-0:");
                     send.sendToTarget();
                 }
             }
