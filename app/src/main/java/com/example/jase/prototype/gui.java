@@ -12,6 +12,8 @@ import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
@@ -24,6 +26,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
+import com.devadvance.circularseekbar.CircularSeekBar;
 
 public class gui extends AppCompatActivity {
 
@@ -35,32 +38,42 @@ public class gui extends AppCompatActivity {
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     SeekBar power;
     SeekBar steering;
+    Button btnRec;
     Stream streamThread;
     Switch fwd;
+    boolean test = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //initialize some of the necessary variables
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gui);
-
         Intent newint = getIntent();
         address = newint.getStringExtra(connect.EXTRA_ADDRESS);
-
         power = findViewById(R.id.power);
         steering = findViewById(R.id.steering);
         fwd = findViewById(R.id.fwd);
+        btnRec = findViewById(R.id.reconnect);
+
+        //determine if this is a test run
+        if(address.equals("Test")){
+            test = true;
+        }
 
         //begin connection and start output thread
-        new ConnectBT().execute();
-        streamThread = new Stream();
+        if(!test) {
+            new ConnectBT().execute();
+            streamThread = new Stream();
+        }
 
         //listens for changes in the power meter
         power.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
+            //send the new value to the car every time it is changed
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                if(b){
+                if(b && !test){
                     String send;
-                    send = "P-" + String.valueOf(i) + ":";
+                    send =String.valueOf(i) + ":";
                     Message next = Message.obtain(streamThread.handler, 1, send);
                     next.sendToTarget();
                 }
@@ -72,8 +85,15 @@ public class gui extends AppCompatActivity {
             }
 
             @Override
+            //resend the last value when user take thumb off the slider
+            //for extra data validation
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                if(!test) {
+                    String send;
+                    send = String.valueOf(seekBar.getProgress());
+                    Message next = Message.obtain(streamThread.handler, 1, send);
+                    next.sendToTarget();
+                }
             }
         });
 
@@ -81,8 +101,8 @@ public class gui extends AppCompatActivity {
         steering.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                if(b){
-                    String send = "S-" + String.valueOf(i) + ":";
+                if(b && !test){
+                    String send =String.valueOf(i+100) + ":";
                     Message next = Message.obtain(streamThread.handler, 1, send);
                     next.sendToTarget();
                 }
@@ -93,12 +113,15 @@ public class gui extends AppCompatActivity {
 
             }
 
-            //when user is done adjusting steering, reset bar to 50
+            //when user is done adjusting steering, re-center the slider
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                steering.setProgress(50);
-                Message send = Message.obtain(streamThread.handler, 1, "S-" + String.valueOf(steering.getProgress()));
-                send.sendToTarget();
+                if(!test) {
+                    steering.setProgress(50);
+                    Message send = Message.obtain(streamThread.handler, 1,
+                            String.valueOf(steering.getProgress() + 100));
+                    send.sendToTarget();
+                }
             }
         });
 
@@ -106,12 +129,33 @@ public class gui extends AppCompatActivity {
         fwd.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if(b){
-                    Message send = Message.obtain(streamThread.handler, 1, "F:");
-                    send.sendToTarget();
-                }else{
-                    Message send = Message.obtain(streamThread.handler, 1, "R:");
-                    send.sendToTarget();
+                if(!test) {
+                    if (b) {
+                        Message send = Message.obtain(streamThread.handler, 1, "0:");
+                        power.setProgress(0);
+                        send.sendToTarget();
+                        send = Message.obtain(streamThread.handler, 1, "F:");
+                        send.sendToTarget();
+                    } else {
+                        Message send = Message.obtain(streamThread.handler, 1, "0:");
+                        power.setProgress(0);
+                        send.sendToTarget();
+                        send = Message.obtain(streamThread.handler, 1, "R:");
+                        send.sendToTarget();
+                    }
+                }
+            }
+        });
+
+        btnRec.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    btSocket.close();
+                    btSocket = null;
+                    new ConnectBT().execute();
+                }catch(IOException e){
+
                 }
             }
         });
@@ -165,22 +209,25 @@ public class gui extends AppCompatActivity {
         @Override
         protected void onPreExecute()
         {
-            progress = ProgressDialog.show(gui.this, "Connecting...", "Please wait!!!");  //show a progress dialog
+            progress = ProgressDialog.show(gui.this, "Connecting...",
+                    "Please wait!!!");  //show a progress dialog
         }
 
         @Override
-        protected Void doInBackground(Void... devices) //while the progress dialog is shown, the connection is done in background
+        //while the progress dialog is shown, the connection is done in background
+        protected Void doInBackground(Void... devices)
         {
             try
             {
                 if (btSocket == null || !isBtConnected)
                 {
-                    myBluetooth = BluetoothAdapter.getDefaultAdapter();//get the mobile bluetooth device
-                    BluetoothDevice module = myBluetooth.getRemoteDevice(address);//connects to the device's address and checks if it's available
+                    myBluetooth = BluetoothAdapter.getDefaultAdapter();
+                    BluetoothDevice module = myBluetooth.getRemoteDevice(address);
                     btSocket = module.createInsecureRfcommSocketToServiceRecord(myUUID);
                     btSocket.connect();//start connection
                 }
             }
+            //if there was an error, the connection failed
             catch (IOException e)
             {
                 ConnectSuccess = false;
@@ -188,6 +235,8 @@ public class gui extends AppCompatActivity {
             return null;
         }
         @Override
+        //if successful, show the GUI
+        //if not, return to the previous screen with a fail message
         protected void onPostExecute(Void result)
         {
             super.onPostExecute(result);
