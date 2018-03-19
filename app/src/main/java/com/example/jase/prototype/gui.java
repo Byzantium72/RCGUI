@@ -16,6 +16,7 @@ import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.Toast;
+import android.widget.VerticalSeekBar;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -33,10 +34,11 @@ public class gui extends AppCompatActivity {
     BluetoothSocket btSocket = null;
     private boolean isBtConnected = false;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    SeekBar power;
+    //SeekBar power;
     SeekBar steering;
     Stream streamThread;
     Switch fwd;
+    VerticalSeekBar Vpower;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +48,8 @@ public class gui extends AppCompatActivity {
         Intent newint = getIntent();
         address = newint.getStringExtra(connect.EXTRA_ADDRESS);
 
-        power = findViewById(R.id.power);
+        Vpower = findViewById(R.id.Vpower);
+        //power = findViewById(R.id.power);
         steering = findViewById(R.id.steering);
         fwd = findViewById(R.id.fwd);
 
@@ -55,7 +58,7 @@ public class gui extends AppCompatActivity {
         streamThread = new Stream();
 
         //listens for changes in the power meter
-        power.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        Vpower.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 if(b){
@@ -111,11 +114,11 @@ public class gui extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if(b){
-                    power.setProgress(0);
+                    Vpower.setProgress(0);
                     Message send = Message.obtain(streamThread.handler, 1, "F:P-0:");
                     send.sendToTarget();
                 }else{
-                    power.setProgress(0);
+                    Vpower.setProgress(0);
                     Message send = Message.obtain(streamThread.handler, 1, "R:p-0:");
                     send.sendToTarget();
                 }

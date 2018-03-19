@@ -43,25 +43,26 @@
         app:layout_constraintBottom_toTopOf="@+id/steering"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <SeekBar
-        android:id="@+id/power"
-        android:layout_width="245dp"
-        android:layout_height="25dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="45dp"
-        android:layout_marginTop="8dp"
+
+    <android.widget.VerticalSeekBar
+        android:id="@+id/Vpower"
+        android:layout_width="25dp"
+        android:layout_height="245dp"
+        android:layout_marginEnd="188dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="InvalidId" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:layout_marginEnd="152dp"
+        android:layout_marginEnd="24dp"
         android:text="Power"
-        app:layout_constraintBottom_toTopOf="@+id/power"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/Vpower"
+        app:layout_constraintTop_toTopOf="parent" />
+
 
 </android.support.constraint.ConstraintLayout>
