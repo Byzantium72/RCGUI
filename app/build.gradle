@@ -26,8 +26,11 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile 'com.github.marcinmoskala:ArcSeekBar:0.31'
+    compile 'com.github.Triggertrap:SeekArc:v1.1'
 }
 
 repositories {
-    maven { url 'https://jitpack.io' }
+    maven {
+        url "https://jitpack.io"
+    }
 }

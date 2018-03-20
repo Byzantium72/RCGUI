@@ -26,9 +26,9 @@
         android:layout_width="wrap_content"
         android:layout_height="23dp"
         android:layout_marginBottom="8dp"
-        android:layout_marginStart="144dp"
+        android:layout_marginStart="168dp"
         android:text="Steering"
-        app:layout_constraintBottom_toTopOf="@+id/arcSeekBar"
+        app:layout_constraintBottom_toTopOf="@+id/Asteering"
         app:layout_constraintStart_toStartOf="parent" />
 
 
@@ -43,18 +43,14 @@
         tools:ignore="InvalidId" />
 
     <com.marcinmoskala.arcseekbar.ArcSeekBar
-        android:id="@+id/arcSeekBar"
-        android:layout_width="200dp"
-        android:layout_height="100dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginStart="72dp"
-        android:layout_marginTop="116dp"
-        app:progress = "50"
+        android:id="@+id/Asteering"
+        android:layout_width="300dp"
+        android:layout_height="150dp"
+        android:layout_marginStart="44dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.026"
-        app:thumb="@drawable/thumb" />
+        app:layout_constraintVertical_bias="0.497" />
 
     <TextView
         android:id="@+id/textView"

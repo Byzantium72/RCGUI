@@ -18,6 +18,10 @@ import android.widget.Switch;
 import android.widget.Toast;
 import android.widget.VerticalSeekBar;
 
+import com.marcinmoskala.arcseekbar.ArcSeekBar;
+import com.marcinmoskala.arcseekbar.ProgressListener;
+import com.triggertrap.seekarc.SeekArc;
+
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.util.Collection;
@@ -35,10 +39,11 @@ public class gui extends AppCompatActivity {
     private boolean isBtConnected = false;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     //SeekBar power;
-    SeekBar steering;
+    //SeekBar steering;
     Stream streamThread;
     Switch fwd;
     VerticalSeekBar Vpower;
+    ArcSeekBar Asteering;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +55,9 @@ public class gui extends AppCompatActivity {
 
         Vpower = findViewById(R.id.Vpower);
         //power = findViewById(R.id.power);
-        steering = findViewById(R.id.steering);
+        //steering = findViewById(R.id.steering);
         fwd = findViewById(R.id.fwd);
+        Asteering = findViewById(R.id.Asteering);
 
         //begin connection and start output thread
         new ConnectBT().execute();
@@ -85,9 +91,9 @@ public class gui extends AppCompatActivity {
         });
 
         //listens for changes in the steering bar
-        steering.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+        /*
+        Asteering.setOnSeekArcChangeListener(new SeekArc.OnSeekArcChangeListener() {
+            public void onProgressChanged(SeekArc seekBar, int i, boolean b) {
                 if(b){
                     String send = "S-" + String.valueOf(i) + ":";
                     Message next = Message.obtain(streamThread.handler, 1, send);
@@ -95,17 +101,24 @@ public class gui extends AppCompatActivity {
                 }
             }
 
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
+            public void onStartTrackingTouch(SeekArc seekBar) {
 
             }
 
             //when user is done adjusting steering, reset bar to 50
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                steering.setProgress(50);
-                Message send = Message.obtain(streamThread.handler, 1, "S-" + String.valueOf(steering.getProgress()));
+            public void onStopTrackingTouch(SeekArc seekBar) {
+                Asteering.setProgress(50);
+                Message send = Message.obtain(streamThread.handler, 1, "S-" + String.valueOf(Asteering.getProgress()));
                 send.sendToTarget();
+            }
+        });*/
+
+        Asteering.setOnProgressChangedListener(new ProgressListener() {
+            @Override
+            public void invoke(int i) {
+                String send = String.valueOf(i + 100) + ":";
+                Message next = Message.obtain(streamThread.handler, 1, send);
+                next.sendToTarget();
             }
         });
 
