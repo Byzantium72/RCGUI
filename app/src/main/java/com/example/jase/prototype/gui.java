@@ -13,6 +13,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
@@ -52,6 +53,7 @@ public class gui extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         //initialize some of the necessary variables
         super.onCreate(savedInstanceState);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_gui);
         Intent newint = getIntent();
         address = newint.getStringExtra(connect.EXTRA_ADDRESS);
