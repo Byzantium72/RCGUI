@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/appbackground"
     tools:context="com.example.jase.prototype.connect">
 
     <TextView
@@ -24,6 +25,8 @@
         android:layout_marginRight="16dp"
         android:layout_marginTop="16dp"
         android:text="Connect"
+        android:background="@drawable/btn_background"
+        android:textColor="#ffffff"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

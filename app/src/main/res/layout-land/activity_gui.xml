@@ -16,6 +16,7 @@
         android:checked="true"
         android:showText="true"
         android:splitTrack="false"
+        android:trackTint="#07cdff"
         android:text="R/F"
         android:textOff="R"
         android:textOn="F"
@@ -79,6 +80,12 @@
         android:layout_marginLeft="16dp"
         android:layout_marginTop="16dp"
         android:text="Reconnect"
+        android:background="@drawable/btn_background"
+        android:textColor="#ffffff"
+        android:bottomRightRadius="30dp"
+        android:bottomLeftRadius="30dp"
+        android:topLeftRadius="30dp"
+        android:topRightRadius="30dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
