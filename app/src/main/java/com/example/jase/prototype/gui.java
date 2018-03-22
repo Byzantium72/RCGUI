@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.Delayed;
 //import com.devadvance.circularseekbar.CircularSeekBar;
 
 public class gui extends AppCompatActivity {
@@ -172,7 +173,7 @@ public class gui extends AppCompatActivity {
                 if(!test) {
                     try {
                         btSocket.close();
-                        btSocket = null;
+                        isBtConnected = false;
                         new ConnectBT().execute();
                     } catch (IOException e) {
 
@@ -193,6 +194,9 @@ public class gui extends AppCompatActivity {
                 }
             }
         });
+
+        String initial = "RPMs: INITIAL";
+        diagnostics.setText(initial);
     }
 
     public void updateText(String s){
@@ -242,20 +246,29 @@ public class gui extends AppCompatActivity {
     private class inStream extends Thread{
         String command;
         public void run(){
-            while(btSocket != null){
+            msg("Run started");
+            while(isBtConnected){
+                msg("In main loop");
                 try {
                     command = "";
                     while (btSocket.getInputStream().available() == 0) {
+                        msg("Waiting for data");
+                        Message send = Message.obtain(mainHandler, INPUT_MESSAGE, "NO DATA");
+                        send.sendToTarget();
                         Thread.sleep(500);
                     }
 
                     while(btSocket.getInputStream().available()>0){
+                        msg("Reading data");
                         command += (char)btSocket.getInputStream().read();
                     }
                     Message send = Message.obtain(mainHandler, INPUT_MESSAGE, command);
                     send.sendToTarget();
                 }catch(Exception e){
-
+                    msg("Error caught: " + e.getCause().toString());
+                }
+                if(!isBtConnected){
+                    break;
                 }
             }
         }
@@ -310,6 +323,7 @@ public class gui extends AppCompatActivity {
             {
                 msg("Connected to " + myBluetooth.getRemoteDevice(address).getName());
                 isBtConnected = true;
+                //inThread.run();
             }
             progress.dismiss();
         }

@@ -96,13 +96,13 @@
         android:id="@+id/Estop"
         android:layout_width="112dp"
         android:layout_height="71dp"
-        android:layout_marginTop="244dp"
-        android:text="Emergency Stop"
+        android:layout_marginBottom="68dp"
         android:background="@drawable/stop_btn"
-        app:layout_constraintHorizontal_bias="0.478"
+        android:text="Emergency Stop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.528"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintRight_toRightOf="parent" />
 
     <TextView
         android:id="@+id/diagnostics"
