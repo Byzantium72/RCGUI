@@ -43,9 +43,10 @@ public class gui extends AppCompatActivity {
     private boolean isBtConnected = false;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     Button btnRec;
+    Button eStop;
     Stream streamThread;
     Switch fwd;
-    VerticalSeekBar Vpower;
+    SeekBar power;
     ArcSeekBar Asteering;
     boolean test = false;
 
@@ -58,9 +59,10 @@ public class gui extends AppCompatActivity {
         Intent newint = getIntent();
         address = newint.getStringExtra(connect.EXTRA_ADDRESS);
 
-        Vpower = findViewById(R.id.Vpower);
+        power = findViewById(R.id.power);
         fwd = findViewById(R.id.fwd);
         btnRec = findViewById(R.id.reconnect);
+        eStop = findViewById(R.id.Estop);
 
         //determine if this is a test run
         if(address.equals("Test")){
@@ -76,7 +78,7 @@ public class gui extends AppCompatActivity {
         }
 
         //listens for changes in the power meter
-        Vpower.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        power.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             //send the new value to the car every time it is changed
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
@@ -132,13 +134,13 @@ public class gui extends AppCompatActivity {
                 if(!test) {
                     if (b) {
                         Message send = Message.obtain(streamThread.handler, 1, "0:");
-                        Vpower.setProgress(0);
+                        power.setProgress(0);
                         send.sendToTarget();
                         send = Message.obtain(streamThread.handler, 1, "F:");
                         send.sendToTarget();
                     } else {
                         Message send = Message.obtain(streamThread.handler, 1, "0:");
-                        Vpower.setProgress(0);
+                        power.setProgress(0);
                         send.sendToTarget();
                         send = Message.obtain(streamThread.handler, 1, "R:");
                         send.sendToTarget();
@@ -150,12 +152,27 @@ public class gui extends AppCompatActivity {
         btnRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                try {
-                    btSocket.close();
-                    btSocket = null;
-                    new ConnectBT().execute();
-                }catch(IOException e){
+                if(!test) {
+                    try {
+                        btSocket.close();
+                        btSocket = null;
+                        new ConnectBT().execute();
+                    } catch (IOException e) {
 
+                    }
+                }else{
+                    msg("Test mode: nothing to reconnect");
+                }
+            }
+        });
+
+        eStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!test){
+                    Message send = Message.obtain(streamThread.handler, 1, "0:");
+                    power.setProgress(0);
+                    send.sendToTarget();
                 }
             }
         });
