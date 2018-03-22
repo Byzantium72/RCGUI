@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -18,6 +19,7 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VerticalSeekBar;
 
@@ -36,18 +38,22 @@ import java.util.UUID;
 
 public class gui extends AppCompatActivity {
 
+    public static final int INPUT_MESSAGE = 5;
     String address = null;
     private ProgressDialog progress;
     BluetoothAdapter myBluetooth = null;
     BluetoothSocket btSocket = null;
     private boolean isBtConnected = false;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    Handler mainHandler;
     Button btnRec;
     Button eStop;
     Stream streamThread;
+    inStream inThread;
     Switch fwd;
     SeekBar power;
     ArcSeekBar Asteering;
+    TextView diagnostics;
     boolean test = false;
 
     @Override
@@ -63,6 +69,7 @@ public class gui extends AppCompatActivity {
         fwd = findViewById(R.id.fwd);
         btnRec = findViewById(R.id.reconnect);
         eStop = findViewById(R.id.Estop);
+        diagnostics = findViewById(R.id.diagnostics);
 
         //determine if this is a test run
         if(address.equals("Test")){
@@ -75,7 +82,17 @@ public class gui extends AppCompatActivity {
         if(!test) {
             new ConnectBT().execute();
             streamThread = new Stream();
+            inThread = new inStream();
         }
+
+        mainHandler = new Handler(Looper.getMainLooper()){
+            @Override
+            public void handleMessage(Message input) {
+                if(input.what == INPUT_MESSAGE){
+                    updateText(input.obj.toString());
+                }
+            }
+        };
 
         //listens for changes in the power meter
         power.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -178,6 +195,10 @@ public class gui extends AppCompatActivity {
         });
     }
 
+    public void updateText(String s){
+        String send = "RPMS: " + s;
+        diagnostics.setText(send);
+    }
     //easy method for displaying messages to user
     private void msg(String s){
         Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
@@ -213,6 +234,28 @@ public class gui extends AppCompatActivity {
                 try {
                     btSocket.getOutputStream().write(stream.remove().getBytes());
                 }catch(IOException e){
+                }
+            }
+        }
+    }
+
+    private class inStream extends Thread{
+        String command;
+        public void run(){
+            while(btSocket != null){
+                try {
+                    command = "";
+                    while (btSocket.getInputStream().available() == 0) {
+                        Thread.sleep(500);
+                    }
+
+                    while(btSocket.getInputStream().available()>0){
+                        command += (char)btSocket.getInputStream().read();
+                    }
+                    Message send = Message.obtain(mainHandler, INPUT_MESSAGE, command);
+                    send.sendToTarget();
+                }catch(Exception e){
+
                 }
             }
         }
