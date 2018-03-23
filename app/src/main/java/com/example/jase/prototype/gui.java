@@ -35,13 +35,20 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.Delayed;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 //import com.devadvance.circularseekbar.CircularSeekBar;
 
 public class gui extends AppCompatActivity {
 
     public static final int INPUT_MESSAGE = 5;
+    public static final int SPEED_MESSAGE = 4;
+    private ScheduledExecutorService scheduler;
+    private ScheduledExecutorService constSpeed;
     String address = null;
     private ProgressDialog progress;
+    private SpeedThread speeder;
     BluetoothAdapter myBluetooth = null;
     BluetoothSocket btSocket = null;
     private boolean isBtConnected = false;
@@ -83,7 +90,6 @@ public class gui extends AppCompatActivity {
         if(!test) {
             new ConnectBT().execute();
             streamThread = new Stream();
-            inThread = new inStream();
         }
 
         mainHandler = new Handler(Looper.getMainLooper()){
@@ -104,7 +110,9 @@ public class gui extends AppCompatActivity {
                     String send;
                     send =String.valueOf(i) + ":";
                     Message next = Message.obtain(streamThread.handler, 1, send);
+                    //Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, send);
                     next.sendToTarget();
+                    //speed.sendToTarget();
                 }
             }
 
@@ -200,7 +208,7 @@ public class gui extends AppCompatActivity {
     }
 
     public void updateText(String s){
-        String send = "RPMS: " + s;
+        String send = "RPMs: " + s;
         diagnostics.setText(send);
     }
     //easy method for displaying messages to user
@@ -243,35 +251,50 @@ public class gui extends AppCompatActivity {
         }
     }
 
+    private class SpeedThread extends Thread{
+        String theSpeed = "";
+        @SuppressLint("HandlerLeak")
+        Handler speedHandler = new Handler(){
+            @Override
+            public void handleMessage(Message input) {
+                if(input.what == SPEED_MESSAGE){
+                    theSpeed = input.obj.toString();
+                }
+            }
+        };
+        private SpeedThread(){
+            Message send = Message.obtain(streamThread.handler, SPEED_MESSAGE, theSpeed);
+            send.sendToTarget();
+        }
+    }
+
     private class inStream extends Thread{
         String command;
-        public void run(){
-            msg("Run started");
-            while(isBtConnected){
-                msg("In main loop");
-                try {
-                    command = "";
-                    while (btSocket.getInputStream().available() == 0) {
-                        msg("Waiting for data");
-                        Message send = Message.obtain(mainHandler, INPUT_MESSAGE, "NO DATA");
-                        send.sendToTarget();
-                        Thread.sleep(500);
-                    }
+        private inStream(){
 
-                    while(btSocket.getInputStream().available()>0){
+        }
+
+        @Override
+        public void run(){
+            try {
+                command = "";
+                if(btSocket.getInputStream().available() == 0) {
+                    int rand = (int)(100*Math.random());
+                    Message send = Message.obtain(mainHandler, INPUT_MESSAGE, String.valueOf(rand));
+                    send.sendToTarget();
+                }else {
+                    while (btSocket.getInputStream().available() > 0) {
                         msg("Reading data");
-                        command += (char)btSocket.getInputStream().read();
+                        command += (char) btSocket.getInputStream().read();
                     }
                     Message send = Message.obtain(mainHandler, INPUT_MESSAGE, command);
                     send.sendToTarget();
-                }catch(Exception e){
-                    msg("Error caught: " + e.getCause().toString());
                 }
-                if(!isBtConnected){
-                    break;
-                }
+            }catch(Exception e){
+                msg("Error caught: " + e.getCause().toString());
             }
         }
+
     }
 
     //an asynchronous task that establishes connection to the bluetooth module
@@ -323,7 +346,17 @@ public class gui extends AppCompatActivity {
             {
                 msg("Connected to " + myBluetooth.getRemoteDevice(address).getName());
                 isBtConnected = true;
-                //inThread.run();
+                inThread = new inStream();
+                try {
+                    scheduler = Executors.newScheduledThreadPool(1);
+                    scheduler.scheduleWithFixedDelay(inThread, 0, 1, TimeUnit.SECONDS);
+                }catch(Exception e){
+                    msg("Exception: " + e.getCause().toString());
+                }
+                /*
+                constSpeed = Executors.newScheduledThreadPool(1);
+                constSpeed.scheduleWithFixedDelay(speeder, 0, 500, TimeUnit.MILLISECONDS);
+                */
             }
             progress.dismiss();
         }
