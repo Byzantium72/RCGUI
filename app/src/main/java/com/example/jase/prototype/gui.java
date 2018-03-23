@@ -160,14 +160,18 @@ public class gui extends AppCompatActivity {
                 if(!test) {
                     if (b) {
                         Message send = Message.obtain(streamThread.handler, 1, "0:");
+                        Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
                         power.setProgress(0);
                         send.sendToTarget();
+                        speed.sendToTarget();
                         send = Message.obtain(streamThread.handler, 1, "F:");
                         send.sendToTarget();
                     } else {
                         Message send = Message.obtain(streamThread.handler, 1, "0:");
+                        Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
                         power.setProgress(0);
                         send.sendToTarget();
+                        speed.sendToTarget();
                         send = Message.obtain(streamThread.handler, 1, "R:");
                         send.sendToTarget();
                     }
@@ -197,8 +201,10 @@ public class gui extends AppCompatActivity {
             public void onClick(View view) {
                 if(!test){
                     Message send = Message.obtain(streamThread.handler, 1, "0:");
+                    Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
                     power.setProgress(0);
                     send.sendToTarget();
+                    speed.sendToTarget();
                 }
             }
         });
@@ -353,6 +359,7 @@ public class gui extends AppCompatActivity {
                 }catch(Exception e){
                     msg("Exception: " + e.getCause().toString());
                 }
+                speeder = new SpeedThread();
                 constSpeed = Executors.newScheduledThreadPool(1);
                 constSpeed.scheduleWithFixedDelay(speeder, 0, 500, TimeUnit.MILLISECONDS);
             }
