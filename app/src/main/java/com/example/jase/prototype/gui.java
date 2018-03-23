@@ -60,8 +60,10 @@ public class gui extends AppCompatActivity {
     inStream inThread;
     Switch fwd;
     SeekBar power;
-    ArcSeekBar Asteering;
+    SeekBar steering;
     TextView diagnostics;
+    TextView txtSteering;
+    TextView txtPower;
     boolean test = false;
 
     @Override
@@ -78,13 +80,14 @@ public class gui extends AppCompatActivity {
         btnRec = findViewById(R.id.reconnect);
         eStop = findViewById(R.id.Estop);
         diagnostics = findViewById(R.id.diagnostics);
+        txtSteering = findViewById(R.id.txtSteering);
+        txtPower = findViewById(R.id.txtPower);
 
         //determine if this is a test run
         if(address.equals("Test")){
             test = true;
         }
-        Asteering = findViewById(R.id.Asteering);
-        Asteering.setMaxProgress(100);
+        steering = findViewById(R.id.steering);
 
         //begin connection and start output thread
         if(!test) {
@@ -101,6 +104,12 @@ public class gui extends AppCompatActivity {
             }
         };
 
+        String setup;
+        setup = "Steering: " + steering.getProgress();
+        txtSteering.setText(setup);
+        setup = "Power: " + power.getProgress();
+        txtPower.setText(setup);
+
         //listens for changes in the power meter
         power.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -114,6 +123,8 @@ public class gui extends AppCompatActivity {
                     next.sendToTarget();
                     speed.sendToTarget();
                 }
+                String text = ("Power: " + i);
+                txtPower.setText(text);
             }
 
             @Override
@@ -131,25 +142,38 @@ public class gui extends AppCompatActivity {
                     Message next = Message.obtain(streamThread.handler, 1, send);
                     next.sendToTarget();
                 }
+                String text = ("Power: " + seekBar.getProgress());
+                txtPower.setText(text);
             }
         });
 
         //listens for changes in the steering bar
-        Asteering.setOnProgressChangedListener(new ProgressListener() {
+        steering.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void invoke(int i) {
-                if(!test) {
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                if(!test && b){
                     String send = String.valueOf(i + 100) + ":";
                     Message next = Message.obtain(streamThread.handler, 1, send);
                     next.sendToTarget();
                 }
+                String text = ("Steering: " + i);
+                txtSteering.setText(text);
             }
-        });
 
-        Asteering.setOnStopTrackingTouch(new ProgressListener() {
             @Override
-            public void invoke(int i) {
-                Asteering.setProgress(50);
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                steering.setProgress(50);
+                if(!test) {
+                    Message next = Message.obtain(streamThread.handler, 1, String.valueOf(steering.getProgress() + 100) + ":");
+                    next.sendToTarget();
+                }
+                String text = ("Steering: " + seekBar.getProgress());
+                txtSteering.setText(text);
             }
         });
 
@@ -179,6 +203,21 @@ public class gui extends AppCompatActivity {
             }
         });
 
+        //this button immediately sets the power of the vehicle to 0
+        eStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!test){
+                    Message send = Message.obtain(streamThread.handler, 1, "0:");
+                    Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
+                    send.sendToTarget();
+                    speed.sendToTarget();
+                }
+                power.setProgress(0);
+            }
+        });
+
+        //reconnnects to the device it was previously connected to
         btnRec.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -196,23 +235,11 @@ public class gui extends AppCompatActivity {
             }
         });
 
-        eStop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(!test){
-                    Message send = Message.obtain(streamThread.handler, 1, "0:");
-                    Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
-                    power.setProgress(0);
-                    send.sendToTarget();
-                    speed.sendToTarget();
-                }
-            }
-        });
-
         String initial = "RPMs: INITIAL";
         diagnostics.setText(initial);
     }
 
+    //updates the diagnostics text on the app
     public void updateText(String s){
         String send = "RPMs: " + s;
         diagnostics.setText(send);
@@ -257,6 +284,7 @@ public class gui extends AppCompatActivity {
         }
     }
 
+    //used to periodically pulse the current speed to car
     private class SpeedThread extends Thread{
         String theSpeed = "";
         @SuppressLint("HandlerLeak")
@@ -274,6 +302,7 @@ public class gui extends AppCompatActivity {
         }
     }
 
+    //used to periodically read in diagnostic data from the car
     private class inStream extends Thread{
         String command;
         private inStream(){
