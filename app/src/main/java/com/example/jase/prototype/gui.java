@@ -110,9 +110,9 @@ public class gui extends AppCompatActivity {
                     String send;
                     send =String.valueOf(i) + ":";
                     Message next = Message.obtain(streamThread.handler, 1, send);
-                    //Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, send);
+                    Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, send);
                     next.sendToTarget();
-                    //speed.sendToTarget();
+                    speed.sendToTarget();
                 }
             }
 
@@ -262,7 +262,7 @@ public class gui extends AppCompatActivity {
                 }
             }
         };
-        private SpeedThread(){
+        public void run(){
             Message send = Message.obtain(streamThread.handler, SPEED_MESSAGE, theSpeed);
             send.sendToTarget();
         }
@@ -353,10 +353,8 @@ public class gui extends AppCompatActivity {
                 }catch(Exception e){
                     msg("Exception: " + e.getCause().toString());
                 }
-                /*
                 constSpeed = Executors.newScheduledThreadPool(1);
                 constSpeed.scheduleWithFixedDelay(speeder, 0, 500, TimeUnit.MILLISECONDS);
-                */
             }
             progress.dismiss();
         }
