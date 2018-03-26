@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -49,6 +50,7 @@ public class gui extends AppCompatActivity {
     TextView diagnostics;
     TextView txtSteering;
     TextView txtPower;
+    ConstraintLayout layout;
     boolean test = false;
 
     @Override
@@ -67,6 +69,7 @@ public class gui extends AppCompatActivity {
         diagnostics = findViewById(R.id.diagnostics);
         txtSteering = findViewById(R.id.txtSteering);
         txtPower = findViewById(R.id.txtPower);
+        layout = findViewById(R.id.layout);
 
         //determine if this is a test run
         if(address.equals("Test")){
@@ -128,7 +131,7 @@ public class gui extends AppCompatActivity {
             }
         });
 
-        //****************************Listeners*****************************************************
+        //*********************************LISTENERS************************************************
         //listens for changes in the steering bar
         steering.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -168,10 +171,12 @@ public class gui extends AppCompatActivity {
                         power.setProgress(0);
                         updateSpeed("0:");
                         updateDirection("F:");
+                        layout.setBackground(getDrawable(R.drawable.appbackground));
                     } else {
                         power.setProgress(0);
                         updateSpeed("0:");
                         updateDirection("R:");
+                        layout.setBackground(getDrawable(R.drawable.rev_background));
                     }
                 }
             }
@@ -181,11 +186,11 @@ public class gui extends AppCompatActivity {
         eStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                power.setProgress(0);
                 if(!test){
                     updateSpeed("0:");
                 }
-                power.setProgress(0);
-            }
+                            }
         });
 
         //reconnnects to the device it was previously connected to
@@ -211,6 +216,7 @@ public class gui extends AppCompatActivity {
         diagnostics.setText(initial);
     }
 
+    //**********************************SIMPLE FUNCTIONS********************************************
     //updates the direction to be sent to the car
     public void updateDirection(String s){
         Message send = Message.obtain(streamThread.handler, DIRECTION_MESSAGE, s);
@@ -237,7 +243,9 @@ public class gui extends AppCompatActivity {
     private void msg(String s){
         Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
     }
+    //**********************************************************************************************
 
+    //***************************************THREADS************************************************
     //this is a background thread that will periodically send data to the bluetooth module
     //without interrupting normal device function
     private class Stream extends Thread{
@@ -274,9 +282,7 @@ public class gui extends AppCompatActivity {
     //used to periodically read in diagnostic data from the car
     private class inStream extends Thread{
         String command;
-        private inStream(){
 
-        }
         @Override
         public void run(){
             try {
@@ -287,7 +293,6 @@ public class gui extends AppCompatActivity {
                     send.sendToTarget();
                 }else {
                     while (btSocket.getInputStream().available() > 0) {
-                        msg("Reading data");
                         command += (char) btSocket.getInputStream().read();
                     }
                     Message send = Message.obtain(mainHandler, INPUT_MESSAGE, command);
@@ -297,8 +302,8 @@ public class gui extends AppCompatActivity {
                 msg("Error caught: " + e.getCause().toString());
             }
         }
-
     }
+    //**********************************************************************************************
 
     //an asynchronous task that establishes connection to the bluetooth module
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
@@ -310,7 +315,6 @@ public class gui extends AppCompatActivity {
             progress = ProgressDialog.show(gui.this, "Connecting...",
                     "Please wait!!!");  //show a progress dialog
         }
-
         @Override
         //while the progress dialog is shown, the connection is done in background
         protected Void doInBackground(Void... devices)
@@ -355,9 +359,11 @@ public class gui extends AppCompatActivity {
                 ScheduledExecutorService startIn;
                 ScheduledExecutorService startOut;
 
+                //check for diagnostic info once every second
                 startIn = Executors.newScheduledThreadPool(1);
                 startIn.scheduleWithFixedDelay(inThread, 0, 1, TimeUnit.SECONDS);
 
+                //send commands to car every 1/10th of a second
                 startOut = Executors.newScheduledThreadPool(1);
                 startOut.scheduleWithFixedDelay(streamThread, 0, 100, TimeUnit.MILLISECONDS);
             }
