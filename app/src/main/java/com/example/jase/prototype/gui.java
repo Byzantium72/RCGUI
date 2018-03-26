@@ -20,7 +20,6 @@ import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -104,8 +103,7 @@ public class gui extends AppCompatActivity {
                 if(b && !test){
                     String send;
                     send =String.valueOf(i) + ":";
-                    Message speed = Message.obtain(streamThread.handler, SPEED_MESSAGE, send);
-                    speed.sendToTarget();
+                    updateSpeed(send);
                 }
                 String text = ("Power: " + i);
                 txtPower.setText(text);
@@ -123,22 +121,21 @@ public class gui extends AppCompatActivity {
                 if(!test) {
                     String send;
                     send = String.valueOf(seekBar.getProgress()) + ":";
-                    Message next = Message.obtain(streamThread.handler, SPEED_MESSAGE, send);
-                    next.sendToTarget();
+                    updateSpeed(send);
                 }
                 String text = ("Power: " + seekBar.getProgress());
                 txtPower.setText(text);
             }
         });
 
+        //****************************Listeners*****************************************************
         //listens for changes in the steering bar
         steering.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 if(!test && b){
                     String send = String.valueOf(i) + ":";
-                    Message next = Message.obtain(streamThread.handler, TURN_MESSAGE, send);
-                    next.sendToTarget();
+                    updateTurn(send);
                 }
                 String text = ("Steering: " + i);
                 txtSteering.setText(text);
@@ -154,9 +151,8 @@ public class gui extends AppCompatActivity {
             public void onStopTrackingTouch(SeekBar seekBar) {
                 steering.setProgress(50);
                 if(!test) {
-                    Message next = Message.obtain(streamThread.handler, TURN_MESSAGE,
-                            String.valueOf(steering.getProgress()) + ":");
-                    next.sendToTarget();
+                    String send = String.valueOf(steering.getProgress()) + ":";
+                    updateTurn(send);
                 }
                 String text = ("Steering: " + seekBar.getProgress());
                 txtSteering.setText(text);
@@ -169,17 +165,13 @@ public class gui extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if(!test) {
                     if (b) {
-                        Message send = Message.obtain(streamThread.handler, SPEED_MESSAGE, "0:");
                         power.setProgress(0);
-                        send.sendToTarget();
-                        send = Message.obtain(streamThread.handler, DIRECTION_MESSAGE, "F:");
-                        send.sendToTarget();
+                        updateSpeed("0:");
+                        updateDirection("F:");
                     } else {
-                        Message send = Message.obtain(streamThread.handler, SPEED_MESSAGE, "0:");
                         power.setProgress(0);
-                        send.sendToTarget();
-                        send = Message.obtain(streamThread.handler, DIRECTION_MESSAGE, "R:");
-                        send.sendToTarget();
+                        updateSpeed("0:");
+                        updateDirection("R:");
                     }
                 }
             }
@@ -190,8 +182,7 @@ public class gui extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if(!test){
-                    Message send = Message.obtain(streamThread.handler, SPEED_MESSAGE, "0:");
-                    send.sendToTarget();
+                    updateSpeed("0:");
                 }
                 power.setProgress(0);
             }
@@ -214,9 +205,27 @@ public class gui extends AppCompatActivity {
                 }
             }
         });
+        //******************************************************************************************
 
         String initial = "RPMs: INITIAL";
         diagnostics.setText(initial);
+    }
+
+    //updates the direction to be sent to the car
+    public void updateDirection(String s){
+        Message send = Message.obtain(streamThread.handler, DIRECTION_MESSAGE, s);
+        send.sendToTarget();
+    }
+    //updates the speed to be sent to the car
+    public void updateSpeed(String s){
+        Message send = Message.obtain(streamThread.handler, SPEED_MESSAGE, s);
+        send.sendToTarget();
+    }
+
+    //updates the turning to be sent to the car
+    public void updateTurn(String s){
+        Message send = Message.obtain(streamThread.handler, TURN_MESSAGE, s);
+        send.sendToTarget();
     }
 
     //updates the diagnostics text on the app
@@ -294,7 +303,7 @@ public class gui extends AppCompatActivity {
     //an asynchronous task that establishes connection to the bluetooth module
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
         private boolean ConnectSuccess = true;
-        
+
         @Override
         protected void onPreExecute()
         {
@@ -340,13 +349,15 @@ public class gui extends AppCompatActivity {
                 msg("Connected to " + myBluetooth.getRemoteDevice(address).getName());
                 isBtConnected = true;
                 inThread = new inStream();
+                streamThread = new Stream();
 
                 //starts the scheduled tasks to send and read information with the car
                 ScheduledExecutorService startIn;
                 ScheduledExecutorService startOut;
+
                 startIn = Executors.newScheduledThreadPool(1);
                 startIn.scheduleWithFixedDelay(inThread, 0, 1, TimeUnit.SECONDS);
-                streamThread = new Stream();
+
                 startOut = Executors.newScheduledThreadPool(1);
                 startOut.scheduleWithFixedDelay(streamThread, 0, 100, TimeUnit.MILLISECONDS);
             }
