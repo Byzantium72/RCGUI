@@ -10,7 +10,6 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -21,24 +20,12 @@ import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.VerticalSeekBar;
 
-import com.marcinmoskala.arcseekbar.ArcSeekBar;
-import com.marcinmoskala.arcseekbar.ProgressListener;
-import com.triggertrap.seekarc.SeekArc;
-
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.Delayed;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-//import com.devadvance.circularseekbar.CircularSeekBar;
 
 public class gui extends AppCompatActivity {
 
@@ -46,11 +33,9 @@ public class gui extends AppCompatActivity {
     public static final int SPEED_MESSAGE = 4;
     public static final int TURN_MESSAGE = 3;
     public static final int DIRECTION_MESSAGE = 2;
-    private ScheduledExecutorService scheduler;
-    private ScheduledExecutorService constSpeed;
     String address = null;
     private ProgressDialog progress;
-    private SpeedThread speeder;
+    private Stream streamThread;
     BluetoothAdapter myBluetooth = null;
     BluetoothSocket btSocket = null;
     private boolean isBtConnected = false;
@@ -58,7 +43,6 @@ public class gui extends AppCompatActivity {
     Handler mainHandler;
     Button btnRec;
     Button eStop;
-    Stream streamThread;
     inStream inThread;
     Switch fwd;
     SeekBar power;
@@ -94,9 +78,9 @@ public class gui extends AppCompatActivity {
         //begin connection and start output thread
         if(!test) {
             new ConnectBT().execute();
-            streamThread = new Stream();
         }
 
+        //handles information read in from the car
         mainHandler = new Handler(Looper.getMainLooper()){
             @Override
             public void handleMessage(Message input) {
@@ -120,9 +104,7 @@ public class gui extends AppCompatActivity {
                 if(b && !test){
                     String send;
                     send =String.valueOf(i) + ":";
-                    //Message next = Message.obtain(streamThread.handler, TURN_MESSAGE, send);
-                    Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, send);
-                    //next.sendToTarget();
+                    Message speed = Message.obtain(streamThread.handler, SPEED_MESSAGE, send);
                     speed.sendToTarget();
                 }
                 String text = ("Power: " + i);
@@ -141,7 +123,7 @@ public class gui extends AppCompatActivity {
                 if(!test) {
                     String send;
                     send = String.valueOf(seekBar.getProgress()) + ":";
-                    Message next = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, send);
+                    Message next = Message.obtain(streamThread.handler, SPEED_MESSAGE, send);
                     next.sendToTarget();
                 }
                 String text = ("Power: " + seekBar.getProgress());
@@ -155,7 +137,7 @@ public class gui extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 if(!test && b){
                     String send = String.valueOf(i) + ":";
-                    Message next = Message.obtain(speeder.speedHandler, TURN_MESSAGE, send);
+                    Message next = Message.obtain(streamThread.handler, TURN_MESSAGE, send);
                     next.sendToTarget();
                 }
                 String text = ("Steering: " + i);
@@ -167,11 +149,12 @@ public class gui extends AppCompatActivity {
 
             }
 
+            //recenter the car's steering when released
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 steering.setProgress(50);
                 if(!test) {
-                    Message next = Message.obtain(speeder.speedHandler, TURN_MESSAGE,
+                    Message next = Message.obtain(streamThread.handler, TURN_MESSAGE,
                             String.valueOf(steering.getProgress()) + ":");
                     next.sendToTarget();
                 }
@@ -186,25 +169,17 @@ public class gui extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if(!test) {
                     if (b) {
-                        //Message send = Message.obtain(streamThread.handler, 1, "0:");
-                        Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
+                        Message send = Message.obtain(streamThread.handler, SPEED_MESSAGE, "0:");
                         power.setProgress(0);
-                        //send.sendToTarget();
-                        speed.sendToTarget();
-                        speed = Message.obtain(speeder.speedHandler, DIRECTION_MESSAGE, "F:");
-                        //send = Message.obtain(streamThread.handler, 1, "F:");
-                        //send.sendToTarget();
-                        speed.sendToTarget();
+                        send.sendToTarget();
+                        send = Message.obtain(streamThread.handler, DIRECTION_MESSAGE, "F:");
+                        send.sendToTarget();
                     } else {
-                        //Message send = Message.obtain(streamThread.handler, 1, "0:");
-                        Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
+                        Message send = Message.obtain(streamThread.handler, SPEED_MESSAGE, "0:");
                         power.setProgress(0);
-                        //send.sendToTarget();
-                        speed.sendToTarget();
-                        speed = Message.obtain(speeder.speedHandler, DIRECTION_MESSAGE, "R:");
-                        //send = Message.obtain(streamThread.handler, 1, "R:");
-                        //send.sendToTarget();
-                        speed.sendToTarget();
+                        send.sendToTarget();
+                        send = Message.obtain(streamThread.handler, DIRECTION_MESSAGE, "R:");
+                        send.sendToTarget();
                     }
                 }
             }
@@ -215,10 +190,8 @@ public class gui extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if(!test){
-                    //Message send = Message.obtain(streamThread.handler, 1, "0:");
-                    Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
-                    //send.sendToTarget();
-                    speed.sendToTarget();
+                    Message send = Message.obtain(streamThread.handler, SPEED_MESSAGE, "0:");
+                    send.sendToTarget();
                 }
                 power.setProgress(0);
             }
@@ -234,7 +207,7 @@ public class gui extends AppCompatActivity {
                         isBtConnected = false;
                         new ConnectBT().execute();
                     } catch (IOException e) {
-
+                        msg(e.toString());
                     }
                 }else{
                     msg("Test mode: nothing to reconnect");
@@ -256,48 +229,16 @@ public class gui extends AppCompatActivity {
         Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
     }
 
-    //this is a background thread that will constantly send data to the bluetooth module
+    //this is a background thread that will periodically send data to the bluetooth module
     //without interrupting normal device function
     private class Stream extends Thread{
-        Queue<String> stream = new LinkedList<>();  //this queue holds all information to be sent
-
-        //handler required for thread to communicate with main UI thread
-        @SuppressLint("HandlerLeak")
-        Handler handler = new Handler(){
-            @Override
-            public void handleMessage(Message input){
-                boolean empty = false;
-                if(stream.size() == 0){
-                    empty = true;
-                }
-                stream.add(input.obj.toString());
-
-                //if wasn't any data being sent, restart the sending process
-                if(empty){
-                    run();
-                }
-            }
-        };
-
-        //once initialized, this method will continue to send data to the bluetooth device until
-        //out of data to send
-        public void run(){
-            while(stream.size() > 0){
-                try {
-                    btSocket.getOutputStream().write(stream.remove().getBytes());
-                }catch(IOException e){
-                }
-            }
-        }
-    }
-
-    //used to periodically pulse the current speed to car
-    private class SpeedThread extends Thread{
         String theSpeed = "0:";
         String theTurn = "50:";
         String direction = "F:";
+
+        //a handler that sorts data that's being sent to it
         @SuppressLint("HandlerLeak")
-        Handler speedHandler = new Handler(){
+        Handler handler = new Handler(){
             @Override
             public void handleMessage(Message input) {
                 if(input.what == SPEED_MESSAGE){
@@ -309,10 +250,15 @@ public class gui extends AppCompatActivity {
                 }
             }
         };
+
+        //sends the data to the output stream
         public void run(){
-            Message send = Message.obtain(streamThread.handler, INPUT_MESSAGE,
-                    "D" + direction + "P" + theSpeed + "S" + theTurn);
-            send.sendToTarget();
+            String command = "D" + direction + "P" + theSpeed + "S" + theTurn;
+            try {
+                btSocket.getOutputStream().write(command.getBytes());
+            }catch(IOException e){
+                msg(e.toString());
+            }
         }
     }
 
@@ -322,7 +268,6 @@ public class gui extends AppCompatActivity {
         private inStream(){
 
         }
-
         @Override
         public void run(){
             try {
@@ -349,8 +294,7 @@ public class gui extends AppCompatActivity {
     //an asynchronous task that establishes connection to the bluetooth module
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
         private boolean ConnectSuccess = true;
-
-
+        
         @Override
         protected void onPreExecute()
         {
@@ -396,15 +340,15 @@ public class gui extends AppCompatActivity {
                 msg("Connected to " + myBluetooth.getRemoteDevice(address).getName());
                 isBtConnected = true;
                 inThread = new inStream();
-                try {
-                    scheduler = Executors.newScheduledThreadPool(1);
-                    scheduler.scheduleWithFixedDelay(inThread, 0, 1, TimeUnit.SECONDS);
-                }catch(Exception e){
-                    msg("Exception: " + e.getCause().toString());
-                }
-                speeder = new SpeedThread();
-                constSpeed = Executors.newScheduledThreadPool(1);
-                constSpeed.scheduleWithFixedDelay(speeder, 0, 100, TimeUnit.MILLISECONDS);
+
+                //starts the scheduled tasks to send and read information with the car
+                ScheduledExecutorService startIn;
+                ScheduledExecutorService startOut;
+                startIn = Executors.newScheduledThreadPool(1);
+                startIn.scheduleWithFixedDelay(inThread, 0, 1, TimeUnit.SECONDS);
+                streamThread = new Stream();
+                startOut = Executors.newScheduledThreadPool(1);
+                startOut.scheduleWithFixedDelay(streamThread, 0, 100, TimeUnit.MILLISECONDS);
             }
             progress.dismiss();
         }
