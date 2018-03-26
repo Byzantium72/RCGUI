@@ -44,6 +44,8 @@ public class gui extends AppCompatActivity {
 
     public static final int INPUT_MESSAGE = 5;
     public static final int SPEED_MESSAGE = 4;
+    public static final int TURN_MESSAGE = 3;
+    public static final int DIRECTION_MESSAGE = 2;
     private ScheduledExecutorService scheduler;
     private ScheduledExecutorService constSpeed;
     String address = null;
@@ -118,9 +120,9 @@ public class gui extends AppCompatActivity {
                 if(b && !test){
                     String send;
                     send =String.valueOf(i) + ":";
-                    Message next = Message.obtain(streamThread.handler, 1, send);
+                    //Message next = Message.obtain(streamThread.handler, TURN_MESSAGE, send);
                     Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, send);
-                    next.sendToTarget();
+                    //next.sendToTarget();
                     speed.sendToTarget();
                 }
                 String text = ("Power: " + i);
@@ -138,8 +140,8 @@ public class gui extends AppCompatActivity {
             public void onStopTrackingTouch(SeekBar seekBar) {
                 if(!test) {
                     String send;
-                    send = String.valueOf(seekBar.getProgress());
-                    Message next = Message.obtain(streamThread.handler, 1, send);
+                    send = String.valueOf(seekBar.getProgress()) + ":";
+                    Message next = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, send);
                     next.sendToTarget();
                 }
                 String text = ("Power: " + seekBar.getProgress());
@@ -152,8 +154,8 @@ public class gui extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 if(!test && b){
-                    String send = String.valueOf(i + 100) + ":";
-                    Message next = Message.obtain(streamThread.handler, 1, send);
+                    String send = String.valueOf(i) + ":";
+                    Message next = Message.obtain(speeder.speedHandler, TURN_MESSAGE, send);
                     next.sendToTarget();
                 }
                 String text = ("Steering: " + i);
@@ -169,7 +171,8 @@ public class gui extends AppCompatActivity {
             public void onStopTrackingTouch(SeekBar seekBar) {
                 steering.setProgress(50);
                 if(!test) {
-                    Message next = Message.obtain(streamThread.handler, 1, String.valueOf(steering.getProgress() + 100) + ":");
+                    Message next = Message.obtain(speeder.speedHandler, TURN_MESSAGE,
+                            String.valueOf(steering.getProgress()) + ":");
                     next.sendToTarget();
                 }
                 String text = ("Steering: " + seekBar.getProgress());
@@ -183,21 +186,25 @@ public class gui extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if(!test) {
                     if (b) {
-                        Message send = Message.obtain(streamThread.handler, 1, "0:");
+                        //Message send = Message.obtain(streamThread.handler, 1, "0:");
                         Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
                         power.setProgress(0);
-                        send.sendToTarget();
+                        //send.sendToTarget();
                         speed.sendToTarget();
-                        send = Message.obtain(streamThread.handler, 1, "F:");
-                        send.sendToTarget();
+                        speed = Message.obtain(speeder.speedHandler, DIRECTION_MESSAGE, "F:");
+                        //send = Message.obtain(streamThread.handler, 1, "F:");
+                        //send.sendToTarget();
+                        speed.sendToTarget();
                     } else {
-                        Message send = Message.obtain(streamThread.handler, 1, "0:");
+                        //Message send = Message.obtain(streamThread.handler, 1, "0:");
                         Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
                         power.setProgress(0);
-                        send.sendToTarget();
+                        //send.sendToTarget();
                         speed.sendToTarget();
-                        send = Message.obtain(streamThread.handler, 1, "R:");
-                        send.sendToTarget();
+                        speed = Message.obtain(speeder.speedHandler, DIRECTION_MESSAGE, "R:");
+                        //send = Message.obtain(streamThread.handler, 1, "R:");
+                        //send.sendToTarget();
+                        speed.sendToTarget();
                     }
                 }
             }
@@ -208,9 +215,9 @@ public class gui extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if(!test){
-                    Message send = Message.obtain(streamThread.handler, 1, "0:");
+                    //Message send = Message.obtain(streamThread.handler, 1, "0:");
                     Message speed = Message.obtain(speeder.speedHandler, SPEED_MESSAGE, "0:");
-                    send.sendToTarget();
+                    //send.sendToTarget();
                     speed.sendToTarget();
                 }
                 power.setProgress(0);
@@ -286,18 +293,25 @@ public class gui extends AppCompatActivity {
 
     //used to periodically pulse the current speed to car
     private class SpeedThread extends Thread{
-        String theSpeed = "";
+        String theSpeed = "0:";
+        String theTurn = "50:";
+        String direction = "F:";
         @SuppressLint("HandlerLeak")
         Handler speedHandler = new Handler(){
             @Override
             public void handleMessage(Message input) {
                 if(input.what == SPEED_MESSAGE){
                     theSpeed = input.obj.toString();
+                }else if(input.what == TURN_MESSAGE){
+                    theTurn = input.obj.toString();
+                }else if(input.what == DIRECTION_MESSAGE){
+                    direction = input.obj.toString();
                 }
             }
         };
         public void run(){
-            Message send = Message.obtain(streamThread.handler, SPEED_MESSAGE, theSpeed);
+            Message send = Message.obtain(streamThread.handler, INPUT_MESSAGE,
+                    "D" + direction + "P" + theSpeed + "S" + theTurn);
             send.sendToTarget();
         }
     }
@@ -390,7 +404,7 @@ public class gui extends AppCompatActivity {
                 }
                 speeder = new SpeedThread();
                 constSpeed = Executors.newScheduledThreadPool(1);
-                constSpeed.scheduleWithFixedDelay(speeder, 0, 500, TimeUnit.MILLISECONDS);
+                constSpeed.scheduleWithFixedDelay(speeder, 0, 100, TimeUnit.MILLISECONDS);
             }
             progress.dismiss();
         }
