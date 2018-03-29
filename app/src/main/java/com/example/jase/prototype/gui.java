@@ -29,10 +29,14 @@ import java.util.concurrent.TimeUnit;
 
 public class gui extends AppCompatActivity {
 
+    //Constants
     public static final int INPUT_MESSAGE = 5;
     public static final int SPEED_MESSAGE = 4;
     public static final int TURN_MESSAGE = 3;
     public static final int DIRECTION_MESSAGE = 2;
+    public static final int STEERING_DEFAULT = 50;
+    public static final int NO_POWER = 0;
+
     String address = null;
     private ProgressDialog progress;
     private Stream streamThread;
@@ -43,6 +47,7 @@ public class gui extends AppCompatActivity {
     Handler mainHandler;
     Button btnRec;
     Button eStop;
+    Button btnDis;
     inStream inThread;
     Switch fwd;
     SeekBar power;
@@ -62,6 +67,7 @@ public class gui extends AppCompatActivity {
         Intent newint = getIntent();
         address = newint.getStringExtra(connect.EXTRA_ADDRESS);
 
+        steering = findViewById(R.id.steering);
         power = findViewById(R.id.power);
         fwd = findViewById(R.id.fwd);
         btnRec = findViewById(R.id.reconnect);
@@ -70,12 +76,12 @@ public class gui extends AppCompatActivity {
         txtSteering = findViewById(R.id.txtSteering);
         txtPower = findViewById(R.id.txtPower);
         layout = findViewById(R.id.layout);
+        btnDis = findViewById(R.id.disconnect);
 
         //determine if this is a test run
         if(address.equals("Test")){
             test = true;
         }
-        steering = findViewById(R.id.steering);
 
         //begin connection and start output thread
         if(!test) {
@@ -92,12 +98,16 @@ public class gui extends AppCompatActivity {
             }
         };
 
+        //Initialize the labels
         String setup;
         setup = "Steering: " + steering.getProgress();
         txtSteering.setText(setup);
         setup = "Power: " + power.getProgress();
         txtPower.setText(setup);
+        String initial = "RPMs: INITIAL";
+        diagnostics.setText(initial);
 
+        //*********************************LISTENERS************************************************
         //listens for changes in the power meter
         power.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -110,6 +120,7 @@ public class gui extends AppCompatActivity {
                 }
                 String text = ("Power: " + i);
                 txtPower.setText(text);
+                //tran.startTransition(5000);
             }
 
             @Override
@@ -131,7 +142,6 @@ public class gui extends AppCompatActivity {
             }
         });
 
-        //*********************************LISTENERS************************************************
         //listens for changes in the steering bar
         steering.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -152,7 +162,7 @@ public class gui extends AppCompatActivity {
             //recenter the car's steering when released
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                steering.setProgress(50);
+                steering.setProgress(STEERING_DEFAULT);
                 if(!test) {
                     String send = String.valueOf(steering.getProgress()) + ":";
                     updateTurn(send);
@@ -168,16 +178,20 @@ public class gui extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if(!test) {
                     if (b) {
-                        power.setProgress(0);
+                        power.setProgress(NO_POWER);
                         updateSpeed("0:");
                         updateDirection("F:");
-                        layout.setBackground(getDrawable(R.drawable.appbackground));
                     } else {
-                        power.setProgress(0);
+                        power.setProgress(NO_POWER);
                         updateSpeed("0:");
                         updateDirection("R:");
-                        layout.setBackground(getDrawable(R.drawable.rev_background));
                     }
+                }
+
+                if(b){
+                    layout.setBackground(getDrawable(R.drawable.appbackground));
+                }else{
+                    layout.setBackground(getDrawable(R.drawable.rev_background));
                 }
             }
         });
@@ -186,11 +200,11 @@ public class gui extends AppCompatActivity {
         eStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                power.setProgress(0);
+                power.setProgress(NO_POWER);
                 if(!test){
                     updateSpeed("0:");
                 }
-                            }
+            }
         });
 
         //reconnnects to the device it was previously connected to
@@ -210,10 +224,23 @@ public class gui extends AppCompatActivity {
                 }
             }
         });
-        //******************************************************************************************
 
-        String initial = "RPMs: INITIAL";
-        diagnostics.setText(initial);
+        //disconnects device and returns to opening screen
+        btnDis.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!test){
+                    try{
+                        btSocket.close();
+                        isBtConnected = false;
+                        finish();
+                    }catch(IOException e){
+                        msg(e.toString());
+                    }
+                }
+            }
+        });
+        //******************************************************************************************
     }
 
     //**********************************SIMPLE FUNCTIONS********************************************

@@ -8,6 +8,22 @@
     tools:context="com.example.jase.prototype.gui"
     android:background="@drawable/appbackground">
 
+    <Button
+        android:id="@+id/disconnect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/stop_btn"
+        android:bottomLeftRadius="30dp"
+        android:bottomRightRadius="30dp"
+        android:text="Disconnect"
+        android:textColor="#ffffff"
+        android:topLeftRadius="30dp"
+        android:topRightRadius="30dp"
+        app:layout_constraintStart_toEndOf="@+id/reconnect"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <Switch
         android:id="@+id/fwd"
         android:layout_width="wrap_content"
