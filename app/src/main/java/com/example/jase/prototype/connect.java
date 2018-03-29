@@ -2,10 +2,7 @@ package com.example.jase.prototype;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -15,7 +12,6 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -29,17 +25,17 @@ public class connect extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //initialize required globals
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connect);
         connect = findViewById(R.id.connect);
         list = findViewById(R.id.deviceList);
-
         myBluetooth = BluetoothAdapter.getDefaultAdapter();
 
         //if bluetooth is not turned on, request to turn it on
         if(myBluetooth == null){
-            Toast.makeText(getApplicationContext(), "No Bluetooth Adapter", Toast.LENGTH_SHORT).show();
-            finish();
+            Toast.makeText(getApplicationContext(), "No Bluetooth Adapter",
+                    Toast.LENGTH_SHORT).show();
         }else{
             if(!myBluetooth.isEnabled()){
                 Intent btOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -61,10 +57,16 @@ public class connect extends AppCompatActivity {
         @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
             String info = ((TextView) view).getText().toString();
-            String address = info.substring(info.length() - 17);
-            Intent intent = new Intent(connect.this, gui.class);
-            intent.putExtra(EXTRA_ADDRESS, address);
-            startActivity(intent);
+            if(!info.equals("Test")) {
+                String address = info.substring(info.length() - 17);
+                Intent intent = new Intent(connect.this, gui.class);
+                intent.putExtra(EXTRA_ADDRESS, address);
+                startActivity(intent);
+            }else{
+                Intent intent = new Intent(connect.this, gui.class);
+                intent.putExtra(EXTRA_ADDRESS, "Test");
+                startActivity(intent);
+            }
         }
     };
 
@@ -78,9 +80,12 @@ public class connect extends AppCompatActivity {
                 l.add(bt.getName() + "\n" + bt.getAddress());
             }
         }else{
-            Toast.makeText(getApplicationContext(), "No paired Bluetooth devices", Toast.LENGTH_SHORT);
+            Toast.makeText(getApplicationContext(), "No paired Bluetooth devices",
+                    Toast.LENGTH_SHORT).show();
         }
-        final ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1,l);
+        l.add("Test");
+        final ArrayAdapter adapter = new ArrayAdapter(this,
+                android.R.layout.simple_list_item_1,l);
         list.setAdapter(adapter);
         list.setOnItemClickListener(myListClickListener);
     }

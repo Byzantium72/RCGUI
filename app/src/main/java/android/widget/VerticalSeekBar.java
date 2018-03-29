@@ -1,10 +1,11 @@
-package com.example.jase.prototype;
+package android.widget;
 
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.support.v7.widget.AppCompatSeekBar;
+
 
 public class VerticalSeekBar extends AppCompatSeekBar {
 
