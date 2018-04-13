@@ -138,16 +138,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:checked="false"
+        android:showText="true"
         android:splitTrack="false"
-        android:trackTint="#07cdff"
-        android:thumbTint="@color/fore_color"
         android:text="Goofy"
-        android:textOff="Off"
-        android:textOn="On"
+        android:textOff="N"
+        android:textOn="G"
+        android:thumbTint="@color/fore_color"
+        android:trackTint="#07cdff"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:checked="true" />
+        tools:checked="false" />
 
 
 </android.support.constraint.ConstraintLayout>

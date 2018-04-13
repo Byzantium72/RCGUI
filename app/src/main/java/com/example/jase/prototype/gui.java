@@ -384,7 +384,13 @@ public class gui extends AppCompatActivity {
                     send.sendToTarget();
                 }else {
                     while (btSocket.getInputStream().available() > 0) {
-                        command += (char) btSocket.getInputStream().read();
+                        char in;
+                        in = (char) btSocket.getInputStream().read();
+                        if(in == ':'){
+                            break;
+                        }else{
+                            command += in;
+                        }
                     }
                     Message send = Message.obtain(textHandler, INPUT_MESSAGE, command);
                     send.sendToTarget();
