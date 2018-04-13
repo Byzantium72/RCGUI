@@ -30,10 +30,12 @@ import java.util.concurrent.TimeUnit;
 public class gui extends AppCompatActivity {
 
     //Constants
+    public static final int GOOFY_MESSAGE = 6;
     public static final int INPUT_MESSAGE = 5;
     public static final int SPEED_MESSAGE = 4;
     public static final int TURN_MESSAGE = 3;
     public static final int DIRECTION_MESSAGE = 2;
+    public static final int TOAST = 1;
     public static final int STEERING_DEFAULT = 50;
     public static final int NO_POWER = 0;
 
@@ -44,12 +46,13 @@ public class gui extends AppCompatActivity {
     BluetoothSocket btSocket = null;
     private boolean isBtConnected = false;
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    Handler mainHandler;
-    Button btnRec;
+    Handler textHandler;
     Button eStop;
     Button btnDis;
+    Button btnRec;
     inStream inThread;
     Switch fwd;
+    Switch goofy;
     SeekBar power;
     SeekBar steering;
     TextView diagnostics;
@@ -70,13 +73,14 @@ public class gui extends AppCompatActivity {
         steering = findViewById(R.id.steering);
         power = findViewById(R.id.power);
         fwd = findViewById(R.id.fwd);
-        btnRec = findViewById(R.id.reconnect);
+        goofy = findViewById(R.id.goofy);
         eStop = findViewById(R.id.Estop);
         diagnostics = findViewById(R.id.diagnostics);
         txtSteering = findViewById(R.id.txtSteering);
         txtPower = findViewById(R.id.txtPower);
         layout = findViewById(R.id.layout);
         btnDis = findViewById(R.id.disconnect);
+        btnRec = findViewById(R.id.reconnect);
 
         //determine if this is a test run
         if(address.equals("Test")){
@@ -89,11 +93,13 @@ public class gui extends AppCompatActivity {
         }
 
         //handles information read in from the car
-        mainHandler = new Handler(Looper.getMainLooper()){
+        textHandler = new Handler(Looper.getMainLooper()){
             @Override
             public void handleMessage(Message input) {
                 if(input.what == INPUT_MESSAGE){
                     updateText(input.obj.toString());
+                }else if(input.what == TOAST){
+                    msg(input.obj.toString());
                 }
             }
         };
@@ -132,9 +138,9 @@ public class gui extends AppCompatActivity {
             //resend the last value when user take thumb off the slider
             //for extra data validation
             public void onStopTrackingTouch(SeekBar seekBar) {
+                power.setProgress(NO_POWER);
                 if(!test) {
-                    String send;
-                    send = String.valueOf(seekBar.getProgress()) + ":";
+                    String send = String.valueOf(power.getProgress()) + ":";
                     updateSpeed(send);
                 }
                 String text = ("Power: " + seekBar.getProgress());
@@ -188,10 +194,25 @@ public class gui extends AppCompatActivity {
                     }
                 }
 
+                //changes color of background depending on being in fwd or reverse
                 if(b){
                     layout.setBackground(getDrawable(R.drawable.appbackground));
                 }else{
                     layout.setBackground(getDrawable(R.drawable.rev_background));
+                }
+            }
+        });
+
+        //this checks the steering mode, goofy or normal
+        goofy.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(!test){
+                    if(b){
+                        updateGoofy("1");
+                    }else{
+                        updateGoofy("0");
+                    }
                 }
             }
         });
@@ -207,36 +228,39 @@ public class gui extends AppCompatActivity {
             }
         });
 
-        //reconnnects to the device it was previously connected to
-        btnRec.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(!test) {
-                    try {
-                        btSocket.close();
-                        isBtConnected = false;
-                        new ConnectBT().execute();
-                    } catch (IOException e) {
-                        msg(e.toString());
-                    }
-                }else{
-                    msg("Test mode: nothing to reconnect");
-                }
-            }
-        });
-
         //disconnects device and returns to opening screen
         btnDis.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if(!test){
                     try{
+                        inThread.close();
+                        streamThread.close();
                         btSocket.close();
                         isBtConnected = false;
                         finish();
                     }catch(IOException e){
                         msg(e.toString());
                     }
+                }
+            }
+        });
+
+        //reconnects to bluetooth device without having to exit
+        btnRec.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try{
+                    inThread.close();
+                    streamThread.close();
+                    btSocket.close();
+                    isBtConnected = false;
+                    new ConnectBT().execute();
+
+                    //make sure car is back in start-up state
+                    appReset();
+                }catch(IOException e){
+                    msg(e.toString());
                 }
             }
         });
@@ -266,9 +290,36 @@ public class gui extends AppCompatActivity {
         String send = "RPMs: " + s;
         diagnostics.setText(send);
     }
+
+    //updates the status of goofy steering
+    public void updateGoofy(String s){
+        Message send = Message.obtain(streamThread.handler, GOOFY_MESSAGE, s);
+        send.sendToTarget();
+    }
+
     //easy method for displaying messages to user
     private void msg(String s){
         Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
+    }
+
+    //ensures app is in start-up condition
+    public void appReset(){
+        steering.setProgress(STEERING_DEFAULT);
+        updateTurn(STEERING_DEFAULT + ":");
+        power.setProgress(NO_POWER);
+        updateSpeed(NO_POWER + ":");
+        goofy.setChecked(false);
+        updateGoofy("0:");
+        fwd.setChecked(true);
+        updateDirection("F:");
+
+        String setup;
+        setup = "Steering: " + steering.getProgress();
+        txtSteering.setText(setup);
+        setup = "Power: " + power.getProgress();
+        txtPower.setText(setup);
+        String initial = "RPMs: INITIAL";
+        diagnostics.setText(initial);
     }
     //**********************************************************************************************
 
@@ -279,6 +330,7 @@ public class gui extends AppCompatActivity {
         String theSpeed = "0:";
         String theTurn = "50:";
         String direction = "F:";
+        String goofy = "0:";
 
         //a handler that sorts data that's being sent to it
         @SuppressLint("HandlerLeak")
@@ -291,17 +343,29 @@ public class gui extends AppCompatActivity {
                     theTurn = input.obj.toString();
                 }else if(input.what == DIRECTION_MESSAGE){
                     direction = input.obj.toString();
+                }else if(input.what == GOOFY_MESSAGE){
+                    goofy = input.obj.toString();
                 }
             }
         };
 
         //sends the data to the output stream
         public void run(){
-            String command = "D" + direction + "P" + theSpeed + "S" + theTurn;
+            String command = "G" + goofy + "D" + direction + "P" + theSpeed + "S" + theTurn;
             try {
                 btSocket.getOutputStream().write(command.getBytes());
             }catch(IOException e){
                 msg(e.toString());
+            }
+        }
+
+        //closes the stream
+        public void close(){
+            try {
+                btSocket.getOutputStream().close();
+            }catch(IOException e){
+                Message send = Message.obtain(textHandler, TOAST, e.getMessage());
+                send.sendToTarget();
             }
         }
     }
@@ -316,17 +380,27 @@ public class gui extends AppCompatActivity {
                 command = "";
                 if(btSocket.getInputStream().available() == 0) {
                     int rand = (int)(100*Math.random());
-                    Message send = Message.obtain(mainHandler, INPUT_MESSAGE, String.valueOf(rand));
+                    Message send = Message.obtain(textHandler, INPUT_MESSAGE, String.valueOf(rand));
                     send.sendToTarget();
                 }else {
                     while (btSocket.getInputStream().available() > 0) {
                         command += (char) btSocket.getInputStream().read();
                     }
-                    Message send = Message.obtain(mainHandler, INPUT_MESSAGE, command);
+                    Message send = Message.obtain(textHandler, INPUT_MESSAGE, command);
                     send.sendToTarget();
                 }
             }catch(Exception e){
                 msg("Error caught: " + e.getCause().toString());
+            }
+        }
+
+        //closes the stream
+        public void close(){
+            try {
+                btSocket.getInputStream().close();
+            }catch(IOException e){
+                Message send = Message.obtain(textHandler, TOAST, e.getMessage());
+                send.sendToTarget();
             }
         }
     }
@@ -335,6 +409,7 @@ public class gui extends AppCompatActivity {
     //an asynchronous task that establishes connection to the bluetooth module
     private class ConnectBT extends AsyncTask<Void, Void, Void> {
         private boolean ConnectSuccess = true;
+        String error = null;
 
         @Override
         protected void onPreExecute()
@@ -348,7 +423,7 @@ public class gui extends AppCompatActivity {
         {
             try
             {
-                if (btSocket == null || !isBtConnected)
+                if (!isBtConnected)
                 {
                     myBluetooth = BluetoothAdapter.getDefaultAdapter();
                     BluetoothDevice module = myBluetooth.getRemoteDevice(address);
@@ -360,6 +435,7 @@ public class gui extends AppCompatActivity {
             catch (IOException e)
             {
                 ConnectSuccess = false;
+                error = e.getMessage();
             }
             return null;
         }
@@ -372,7 +448,7 @@ public class gui extends AppCompatActivity {
 
             if (!ConnectSuccess)
             {
-                msg("Connection Failed.");
+                msg(error);
                 finish();
             }
             else

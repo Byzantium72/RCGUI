@@ -9,19 +9,19 @@
     android:background="@drawable/appbackground">
 
     <Button
-        android:id="@+id/disconnect"
+        android:id="@+id/reconnect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
+        android:layout_marginStart="24dp"
         android:layout_marginTop="16dp"
-        android:background="@drawable/stop_btn"
+        android:background="@drawable/btn_background"
         android:bottomLeftRadius="30dp"
         android:bottomRightRadius="30dp"
-        android:text="Disconnect"
+        android:text="Reconnect"
         android:textColor="#ffffff"
         android:topLeftRadius="30dp"
         android:topRightRadius="30dp"
-        app:layout_constraintStart_toEndOf="@+id/reconnect"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Switch
@@ -41,22 +41,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-
-    <Button
-        android:id="@+id/reconnect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
-        android:layout_marginTop="16dp"
-        android:text="Reconnect"
-        android:background="@drawable/btn_background"
-        android:textColor="#ffffff"
-        android:bottomRightRadius="30dp"
-        android:bottomLeftRadius="30dp"
-        android:topLeftRadius="30dp"
-        android:topRightRadius="30dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
     <SeekBar
         android:id="@+id/power"
@@ -132,6 +116,38 @@
         app:layout_constraintStart_toEndOf="@+id/steering"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Current Power" />
+
+    <Button
+        android:id="@+id/disconnect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="124dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/stop_btn"
+        android:bottomLeftRadius="30dp"
+        android:bottomRightRadius="30dp"
+        android:text="Disconnect"
+        android:textColor="#ffffff"
+        android:topLeftRadius="30dp"
+        android:topRightRadius="30dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Switch
+        android:id="@+id/goofy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:splitTrack="false"
+        android:trackTint="#07cdff"
+        android:thumbTint="@color/fore_color"
+        android:text="Goofy"
+        android:textOff="Off"
+        android:textOn="On"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:checked="true" />
 
 
 </android.support.constraint.ConstraintLayout>
